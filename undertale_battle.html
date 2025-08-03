@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undertale Battle Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            font-family: 'Courier Prime', monospace;
+            color: white;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        .battle-screen {
+            width: 640px;
+            height: 480px;
+            margin: 50px auto;
+            background: #000;
+            border: 5px solid #fff;
+            position: relative;
+            image-rendering: pixelated;
+        }
+        
+        .enemy-area {
+            width: 100%;
+            height: 240px;
+            background: #000;
+            position: relative;
+            text-align: center;
+            padding-top: 50px;
+        }
+        
+        .enemy {
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px #000;
+            animation: enemyIdle 2s ease-in-out infinite;
+        }
+        
+        @keyframes enemyIdle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .enemy-stats {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #ffff00;
+        }
+        
+        .battle-box {
+            width: 570px;
+            height: 140px;
+            background: #000;
+            border: 5px solid #fff;
+            margin: 10px auto;
+            position: relative;
+        }
+        
+        .soul {
+            width: 16px;
+            height: 16px;
+            background: #ff0000;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 2px;
+            transition: all 0.1s ease;
+        }
+        
+        .bullet {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            position: absolute;
+            border-radius: 50%;
+        }
+        
+        .ui-area {
+            height: 120px;
+            background: #000;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .hp-bar-container {
+            margin-bottom: 10px;
+        }
+        
+        .hp-label {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        
+        .hp-bar {
+            width: 200px;
+            height: 20px;
+            background: #8b0000;
+            border: 2px solid #fff;
+            position: relative;
+        }
+        
+        .hp-fill {
+            height: 100%;
+            background: #ffff00;
+            transition: width 0.5s ease;
+        }
+        
+        .hp-text {
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 1px 1px #000;
+        }
+        
+        .text-box {
+            width: 100%;
+            height: 60px;
+            background: #000;
+            border: 3px solid #fff;
+            padding: 10px;
+            font-size: 16px;
+            color: #fff;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .menu-buttons {
+            display: flex;
+            justify-content: space-around;
+            height: 40px;
+        }
+        
+        .menu-button {
+            background: #000;
+            color: #fff;
+            border: 3px solid #fff;
+            padding: 8px 16px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+        
+        .menu-button:hover {
+            background: #fff;
+            color: #000;
+        }
+        
+        .menu-button.selected {
+            background: #ffff00;
+            color: #000;
+        }
+        
+        .submenu {
+            position: absolute;
+            bottom: 140px;
+            left: 10px;
+            right: 10px;
+            background: #000;
+            border: 3px solid #fff;
+            padding: 10px;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .submenu-item {
+            padding: 5px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+        }
+        
+        .submenu-item:hover {
+            background: #333;
+        }
+        
+        .damage-text {
+            position: absolute;
+            color: #ff0000;
+            font-size: 20px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: damageFloat 1s ease-out forwards;
+        }
+        
+        @keyframes damageFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0px);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            pointer-events: none;
+            animation: particleFloat 1s ease-out forwards;
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translateY(-30px);
+            }
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            color: #ff0000;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="battle-screen">
+        <div class="enemy-area">
+            <div class="enemy-stats">* Flowey - ATK 19 DEF 0</div>
+            <div class="enemy">🌻 Flowey</div>
+        </div>
+        
+        <div class="battle-box" id="battleBox">
+            <div class="soul" id="soul"></div>
+        </div>
+        
+        <div class="ui-area">
+            <div class="hp-bar-container">
+                <div class="hp-label">Frisk LV 1</div>
+                <div class="hp-bar">
+                    <div class="hp-fill" id="hpFill" style="width: 100%;"></div>
+                    <div class="hp-text" id="hpText">20 / 20</div>
+                </div>
+            </div>
+            
+            <div class="text-box" id="textBox">
+                * You encounter Flowey!
+            </div>
+            
+            <div class="menu-buttons" id="menuButtons">
+                <button class="menu-button" onclick="selectAction('fight')">FIGHT</button>
+                <button class="menu-button" onclick="selectAction('act')">ACT</button>
+                <button class="menu-button" onclick="selectAction('item')">ITEM</button>
+                <button class="menu-button" onclick="selectAction('mercy')">MERCY</button>
+            </div>
+        </div>
+        
+        <div class="submenu" id="submenu"></div>
+        <div class="game-over" id="gameOver">
+            <div>GAME OVER</div>
+            <div style="font-size: 16px; margin-top: 20px;">Press R to restart</div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            playerHP: 20,
+            maxHP: 20,
+            enemyHP: 50,
+            maxEnemyHP: 50,
+            currentAction: null,
+            battlePhase: 'menu', // 'menu', 'attack', 'defend'
+            bullets: [],
+            gameOver: false
+        };
+
+        const soul = document.getElementById('soul');
+        const battleBox = document.getElementById('battleBox');
+        const textBox = document.getElementById('textBox');
+        const submenu = document.getElementById('submenu');
+        const hpFill = document.getElementById('hpFill');
+        const hpText = document.getElementById('hpText');
+        const gameOverDiv = document.getElementById('gameOver');
+
+        let keys = {};
+        let soulPosition = { x: 285, y: 70 };
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            
+            if (e.key === 'r' && gameState.gameOver) {
+                restartGame();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        function updateSoulPosition() {
+            if (gameState.battlePhase !== 'defend') return;
+            
+            const speed = 3;
+            
+            if (keys['ArrowLeft'] || keys['a']) soulPosition.x -= speed;
+            if (keys['ArrowRight'] || keys['d']) soulPosition.x += speed;
+            if (keys['ArrowUp'] || keys['w']) soulPosition.y -= speed;
+            if (keys['ArrowDown'] || keys['s']) soulPosition.y += speed;
+            
+            // Keep soul within battle box bounds
+            soulPosition.x = Math.max(8, Math.min(562, soulPosition.x));
+            soulPosition.y = Math.max(8, Math.min(132, soulPosition.y));
+            
+            soul.style.left = soulPosition.x + 'px';
+            soul.style.top = soulPosition.y + 'px';
+        }
+
+        function selectAction(action) {
+            if (gameState.battlePhase !== 'menu') return;
+            
+            gameState.currentAction = action;
+            
+            switch(action) {
+                case 'fight':
+                    showSubmenu([
+                        { text: 'Flowey', action: () => attackEnemy() }
+                    ]);
+                    break;
+                case 'act':
+                    showSubmenu([
+                        { text: 'Check', action: () => checkEnemy() },
+                        { text: 'Talk', action: () => talkToEnemy() },
+                        { text: 'Compliment', action: () => complimentEnemy() }
+                    ]);
+                    break;
+                case 'item':
+                    showSubmenu([
+                        { text: 'Bandage', action: () => useItem('bandage') },
+                        { text: 'Monster Candy', action: () => useItem('candy') }
+                    ]);
+                    break;
+                case 'mercy':
+                    showSubmenu([
+                        { text: 'Spare', action: () => spareEnemy() },
+                        { text: 'Flee', action: () => fleeFromBattle() }
+                    ]);
+                    break;
+            }
+        }
+
+        function showSubmenu(items) {
+            submenu.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'submenu-item';
+                div.textContent = '* ' + item.text;
+                div.onclick = () => {
+                    hideSubmenu();
+                    item.action();
+                };
+                submenu.appendChild(div);
+            });
+            submenu.style.display = 'block';
+        }
+
+        function hideSubmenu() {
+            submenu.style.display = 'none';
+        }
+
+        function attackEnemy() {
+            const damage = Math.floor(Math.random() * 15) + 5;
+            gameState.enemyHP = Math.max(0, gameState.enemyHP - damage);
+            
+            textBox.textContent = `* You deal ${damage} damage to Flowey!`;
+            showDamageText(damage, 320, 150);
+            
+            if (gameState.enemyHP <= 0) {
+                setTimeout(() => {
+                    textBox.textContent = "* Flowey has been defeated! You win!";
+                }, 1500);
+                return;
+            }
+            
+            setTimeout(() => startEnemyTurn(), 2000);
+        }
+
+        function checkEnemy() {
+            textBox.textContent = "* FLOWEY - ATK 19 DEF 0\n* Photoshop Flowey's older brother.";
+            setTimeout(() => startEnemyTurn(), 2000);
+        }
+
+        function talkToEnemy() {
+            const responses = [
+                "* You try to talk to Flowey.\n* Flowey laughs maniacally.",
+                "* You tell Flowey about your day.\n* Flowey seems unimpressed.",
+                "* You ask Flowey about the weather.\n* Flowey ignores you."
+            ];
+            textBox.textContent = responses[Math.floor(Math.random() * responses.length)];
+            setTimeout(() => startEnemyTurn(), 2000);
+        }
+
+        function complimentEnemy() {
+            textBox.textContent = "* You compliment Flowey's petals.\n* Flowey's ATTACK decreased!";
+            setTimeout(() => startEnemyTurn(), 2000);
+        }
+
+        function useItem(item) {
+            if (item === 'bandage') {
+                const heal = 10;
+                gameState.playerHP = Math.min(gameState.maxHP, gameState.playerHP + heal);
+                updateHPBar();
+                textBox.textContent = `* You used a Bandage and recovered ${heal} HP!`;
+            } else if (item === 'candy') {
+                const heal = 15;
+                gameState.playerHP = Math.min(gameState.maxHP, gameState.playerHP + heal);
+                updateHPBar();
+                textBox.textContent = `* You ate Monster Candy and recovered ${heal} HP!`;
+            }
+            setTimeout(() => startEnemyTurn(), 2000);
+        }
+
+        function spareEnemy() {
+            textBox.textContent = "* You spare Flowey.\n* But Flowey doesn't want to be spared!";
+            setTimeout(() => startEnemyTurn(), 2000);
+        }
+
+        function fleeFromBattle() {
+            textBox.textContent = "* You try to flee...\n* But you can't escape!";
+            setTimeout(() => startEnemyTurn(), 2000);
+        }
+
+        function startEnemyTurn() {
+            gameState.battlePhase = 'defend';
+            const attacks = [
+                "* Flowey sends a cluster of bullets!",
+                "* Flowey grins wickedly and attacks!",
+                "* Flowey's petals glow menacingly!"
+            ];
+            textBox.textContent = attacks[Math.floor(Math.random() * attacks.length)];
+            
+            // Start bullet pattern
+            setTimeout(() => {
+                startBulletPattern();
+            }, 1000);
+        }
+
+        function startBulletPattern() {
+            const pattern = Math.floor(Math.random() * 3);
+            
+            switch(pattern) {
+                case 0:
+                    circularPattern();
+                    break;
+                case 1:
+                    horizontalPattern();
+                    break;
+                case 2:
+                    randomPattern();
+                    break;
+            }
+            
+            setTimeout(() => endDefendPhase(), 4000);
+        }
+
+        function circularPattern() {
+            const centerX = 285;
+            const centerY = 70;
+            let angle = 0;
+            
+            const interval = setInterval(() => {
+                for (let i = 0; i < 8; i++) {
+                    const bulletAngle = angle + (i * Math.PI / 4);
+                    const bullet = createBullet(
+                        centerX + Math.cos(bulletAngle) * 50,
+                        centerY + Math.sin(bulletAngle) * 50,
+                        Math.cos(bulletAngle) * 2,
+                        Math.sin(bulletAngle) * 2
+                    );
+                }
+                angle += 0.3;
+            }, 200);
+            
+            setTimeout(() => clearInterval(interval), 3500);
+        }
+
+        function horizontalPattern() {
+            const interval = setInterval(() => {
+                const side = Math.random() < 0.5 ? 'left' : 'right';
+                const startX = side === 'left' ? 0 : 570;
+                const endX = side === 'left' ? 570 : 0;
+                const y = Math.random() * 140;
+                
+                createBullet(startX, y, (endX - startX) / 100, 0);
+            }, 300);
+            
+            setTimeout(() => clearInterval(interval), 3500);
+        }
+
+        function randomPattern() {
+            const interval = setInterval(() => {
+                const x = Math.random() * 570;
+                const y = Math.random() * 140;
+                const targetX = soulPosition.x;
+                const targetY = soulPosition.y;
+                
+                const dx = targetX - x;
+                const dy = targetY - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                createBullet(x, y, (dx / distance) * 2, (dy / distance) * 2);
+            }, 400);
+            
+            setTimeout(() => clearInterval(interval), 3500);
+        }
+
+        function createBullet(x, y, vx, vy) {
+            const bullet = document.createElement('div');
+            bullet.className = 'bullet';
+            bullet.style.left = x + 'px';
+            bullet.style.top = y + 'px';
+            battleBox.appendChild(bullet);
+            
+            const bulletData = { element: bullet, x, y, vx, vy };
+            gameState.bullets.push(bulletData);
+            
+            return bulletData;
+        }
+
+        function updateBullets() {
+            gameState.bullets.forEach((bullet, index) => {
+                bullet.x += bullet.vx;
+                bullet.y += bullet.vy;
+                
+                bullet.element.style.left = bullet.x + 'px';
+                bullet.element.style.top = bullet.y + 'px';
+                
+                // Remove bullets that are off-screen
+                if (bullet.x < -10 || bullet.x > 580 || bullet.y < -10 || bullet.y > 150) {
+                    bullet.element.remove();
+                    gameState.bullets.splice(index, 1);
+                }
+                
+                // Check collision with soul
+                const soulRect = {
+                    x: soulPosition.x,
+                    y: soulPosition.y,
+                    width: 16,
+                    height: 16
+                };
+                
+                const bulletRect = {
+                    x: bullet.x,
+                    y: bullet.y,
+                    width: 8,
+                    height: 8
+                };
+                
+                if (checkCollision(soulRect, bulletRect)) {
+                    takeDamage(5);
+                    bullet.element.remove();
+                    gameState.bullets.splice(index, 1);
+                }
+            });
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        function takeDamage(damage) {
+            gameState.playerHP = Math.max(0, gameState.playerHP - damage);
+            updateHPBar();
+            showDamageText(damage, soulPosition.x, soulPosition.y);
+            createParticles(soulPosition.x, soulPosition.y);
+            
+            if (gameState.playerHP <= 0) {
+                gameOver();
+            }
+        }
+
+        function showDamageText(damage, x, y) {
+            const damageDiv = document.createElement('div');
+            damageDiv.className = 'damage-text';
+            damageDiv.textContent = '-' + damage;
+            damageDiv.style.left = x + 'px';
+            damageDiv.style.top = y + 'px';
+            battleBox.appendChild(damageDiv);
+            
+            setTimeout(() => damageDiv.remove(), 1000);
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 6; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = (x + Math.random() * 16) + 'px';
+                particle.style.top = (y + Math.random() * 16) + 'px';
+                battleBox.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
+        function endDefendPhase() {
+            // Clear all bullets
+            gameState.bullets.forEach(bullet => bullet.element.remove());
+            gameState.bullets = [];
+            
+            gameState.battlePhase = 'menu';
+            textBox.textContent = "* What will you do?";
+        }
+
+        function updateHPBar() {
+            const percentage = (gameState.playerHP / gameState.maxHP) * 100;
+            hpFill.style.width = percentage + '%';
+            hpText.textContent = `${gameState.playerHP} / ${gameState.maxHP}`;
+        }
+
+        function gameOver() {
+            gameState.gameOver = true;
+            gameState.battlePhase = 'gameover';
+            gameOverDiv.style.display = 'block';
+            
+            // Clear all bullets
+            gameState.bullets.forEach(bullet => bullet.element.remove());
+            gameState.bullets = [];
+        }
+
+        function restartGame() {
+            gameState = {
+                playerHP: 20,
+                maxHP: 20,
+                enemyHP: 50,
+                maxEnemyHP: 50,
+                currentAction: null,
+                battlePhase: 'menu',
+                bullets: [],
+                gameOver: false
+            };
+            
+            soulPosition = { x: 285, y: 70 };
+            soul.style.left = soulPosition.x + 'px';
+            soul.style.top = soulPosition.y + 'px';
+            
+            updateHPBar();
+            textBox.textContent = "* You encounter Flowey!";
+            gameOverDiv.style.display = 'none';
+            hideSubmenu();
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameState.gameOver) {
+                updateSoulPosition();
+                updateBullets();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
