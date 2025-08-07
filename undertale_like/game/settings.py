@@ -1,0 +1,24 @@
+WIDTH = 640
+HEIGHT = 480
+FPS = 60
+
+# Colors (R, G, B)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+GRAY = (40, 40, 40)
+LIGHT_GRAY = (180, 180, 180)
+RED = (220, 60, 60)
+GREEN = (60, 200, 60)
+BLUE = (70, 140, 240)
+YELLOW = (240, 220, 70)
+
+DIALOG_TEXT_COLOR = WHITE
+DIALOG_BOX_COLOR = (20, 20, 20)
+DIALOG_BOX_BORDER = (80, 80, 80)
+
+BATTLE_BOX_COLOR = (10, 10, 10)
+BATTLE_BOX_BORDER = (200, 200, 200)
+
+FONT_NAME = None  # Default pygame font
+FONT_SIZE = 18
+TITLE = "Original Undertale-like"
